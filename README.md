@@ -20,7 +20,7 @@ This OS is intended to be ran through Windows 10/11 with MSys2 and Qemu at the c
 
 - Launch 'Msys2 MinGW64'
 - Navigate to 'boot.bin' (example: cd /c/Users/greenlaser/Documents/_dumb/DumbOS/build)
-- Run DumbOS 'qemu-system-x86_64.exe -drive format=raw,file=boot.bin'
+- Run DumbOS 'qemu-system-x86_64.exe -drive format=raw,file=boot.img'
 
 ---
 
