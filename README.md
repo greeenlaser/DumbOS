@@ -4,11 +4,13 @@ This is a dumb idea i had to try to make an OS, obviously never anywhere near li
 
 This OS is intended to be ran through Windows 10/11 with MSys2 and Qemu at the current stage.
 
+---
+
 ## How to install and set up Msys2 and Qemu for running DumbOS
 
 - [Download Msys2](https://www.msys2.org/)
-- Launch 'Msys2 MinGW64'
-- Set up Msys2       - 'pacman -Syu'
+- Launch 'MSys2 MinGW64'
+- Set up MSys2       - 'pacman -Syu'
 - Install essentials - 'pacman -S --needed base-devel nasm cmake'
 - Install Qemu       - 'pacman -S mingw-w64-x86_64-qemu'
 	
