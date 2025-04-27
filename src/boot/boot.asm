@@ -8,42 +8,22 @@ boot_drive: db 0
 
 start:
 	; Set up segment registers (basic BIOS bootloader standard)
-	cli             ; Temporarily disable interrupts during setup
-	xor ax, ax      ; Clear ax register
-	mov ds, ax      ; Set DS (Data Segment) to 0
-	mov es, ax      ; Set ES (Extra Segment) to 0
-	mov ss, ax      ; Set SS (Stack Segment) to 0
-	mov sp, 0x7C00  ; Set stack pointer to 0x7C00 (top of bootloader memory)
+	cli
+	xor ax, ax
+	mov ds, ax
+	mov es, ax
+	mov ss, ax
+	mov sp, 0x7C00
 	mov [boot_drive], dl ; Save BIOS dl
-	sti             ; Re-enable interrupts
+	sti
 
 	; Clear the screen before writing text
-	mov ah, 0x06    ; Scroll up window
-	mov al, 0       ; Number of lines to scroll (0 = clear entire screen)
+	mov ah, 0x06
+	mov al, 0
 	mov bh, 0x07    ; Light gray text on black background
 	mov cx, 0x0000  ; Upper-left corner (row 0, column 0)
 	mov dx, 0x184F  ; Lower-right corner (row 24, column 79)
-	int 0x10        ; Call BIOS video interrupt to perform screen clear
-
-	; Move cursor to top-left corner
-	mov ah, 0x02    ; Set cursor position
-	mov bh, 0x00    ; Page number
-	mov dh, 0x00    ; Row 0 (top row)
-	mov dl, 0x00    ; Column 0 (leftmost column)
-	int 0x10        ; Call BIOS video interrupt to set cursor
-
-	; Print bootloader startup message
-	mov si, startup_message
-
-print_startup_message:
-	lodsb
-	or al, al
-	jz load_kernel
-
-	mov ah, 0x0E
-	mov bh, 0x00
 	int 0x10
-	jmp print_startup_message
 
 load_kernel:
 	; Load the kernel from disk
@@ -58,52 +38,86 @@ load_kernel:
 
 	jc disk_error   ; If Carry Flag set, jump to disk_error
 
-	mov si, kernel_message
-	call print_message
+	; Set up GDT
+	cli
+	lgdt [gdt_descriptor]
 
-	; Jump to the loaded kernel
-	jmp 0x0000:0x1000
+	; Enter protected mode
+	mov eax, cr0
+	or eax, 1
+	mov cr0, eax
 
-disk_error:
-	; Move cursor to next line
-	mov ah, 0x02
-	mov bh, 0x00
-	mov dh, 2        ; Row 2 (two lines below)
-	mov dl, 0x00     ; Column 0
-	int 0x10
+	; Far jump to flush the pipeline and switch CS
+	jmp 0x08:protected_mode_entry
 
-	; Print simple disk error message
-	mov si, error_message
-	call print_message
-	jmp hang
+; ==============================
+; 16-bit Print functions
+; ==============================
 
 print_message:
 	lodsb
 	or al, al
 	jz .done
-
 	mov ah, 0x0E
+	mov bh, 0
 	int 0x10
 	jmp print_message
 .done:
 	ret
 
-hang:
+disk_error:
+	mov si, error_message
+	call print_message
 	cli
 	hlt
-	jmp hang
 
-startup_message:
-	db "Loading DumbOS...", 0
+; ==============================
+; GDT (Global Descriptior Table)
+; ==============================
 
-kernel_message:
-	db "Kernel loaded!", 0
+gdt_start:
+	; Null descriptor
+	dq 0x0000000000000000
+
+	; Code Segment descriptor (base=0, limit=4GB, 0x9A = executable, readable)
+	dq 0x00CF9A000000FFFF
+
+	; Data Segment descriptor (base=0, limit=4GB, 0x92 = writable data)
+	dq 0x00CF92000000FFFF
+
+gdt_end:
+
+gdt_descriptor:
+	dw gdt_end - gdt_start - 1 ; Limit (16-bit)
+	dd gdt_start     ; Base address (32-bit)
+
+; ==============================
+; 32-bit Entry point
+; ==============================
+
+[BITS 32]
+
+protected_mode_entry:
+	mov ax, 0x10     ; Data segment selector (second entry)
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+
+	; Jump to loaded 32-bit kernel
+	jmp 0x1000
+
+; ==============================
+; Strings
+; ==============================
 
 error_message:
-	db "Disk Read Error!", 0
+	db "Disk read error!", 0
 
-; Fill the rest of the boot sector with zeros
+; ==============================
+; Boot signature
+; ==============================
+
 times 510-($-$$) db 0
-
-; Boot signature required by BIOS
 dw 0xAA55

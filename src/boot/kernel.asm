@@ -1,89 +1,149 @@
 ; ===== DumbOS Kernel =====
 
-BITS 16
+BITS 32
 ORG 0x1000           ; Kernel is loaded at 0x1000
 
 start:
-	; Set text color to light gray on black
-	mov bl, 0x07
+	; Set up VGA text mode (direct memory access at 0x88000)
+	mov edi, 0xB8000
 
-	; Clear the screen before writing text
-	mov ah, 0x06    ; Scroll up window
-	mov al, 0       ; Number of lines to scroll (0 = clear entire screen)
-	mov bh, 0x07    ; Light gray text on black background
-	mov cx, 0x0000  ; Upper-left corner (row 0, column 0)
-	mov dx, 0x184F  ; Lower-right corner (row 24, column 79)
-	int 0x10        ; Call BIOS video interrupt to perform screen clear
+    ; Push two rows down and two chars right
+    add edi, 160     ; 1 row down (160 bytes)
 
-	; Move cursor to top left corner
-	mov ah, 0x02
-	mov bh, 0x00
-	mov dh, 1       ; Row 1
-	mov dl, 2       ; Column 2
-	int 0x10
+	; Draw OS title in ASCII art
+	call print_os_title
 
-	; Print os title message
-	mov si, os_title
-
-print_os_title:
-	lodsb
-	or al, al
-	jz after_os_title
-	cmp al, 0x0A
-	jne .print_char
-
-	; Handle new line, move cursor down
-	mov ah, 0x03
-	int 0x10
-	inc dh
-	mov dl, 2
-	mov ah, 0x02
-	int 0x10
-	jmp print_os_title
-
-.print_char:
-	mov ah, 0x0E
-	mov bh, 0x00
-	int 0x10
-	jmp print_os_title
+	; Move cursor down 1 line and 2 columns after ASCII art
+	add edi, 160
+	add edi, 4
 
 after_os_title:
-	mov ah, 0x03
-	int 0x10
-	inc dh
-	mov dl, 2
-	mov ah, 0x02
-	int 0x10
+	; Print version
+	mov esi, kernel_version_message
+	mov ah, 0x07
+	call print_string
 
-	mov si, kernel_version_message
+	; Move to next line
+	add edi, 160
+	sub edi, 38      ; 19 chars * 2 bytes
 
-print_kernel_version:
+	; Print type
+	mov esi, kernel_type_message
+	mov ah, 0x07
+	call print_string
+
+	; Move down two more rows
+    add edi, 320
+    sub edi, 36      ; 18 chars * 2 bytes
+
+	; Print success
+	mov esi, kernel_success_message
+	mov ah, 0x0A
+	call print_string
+
+	call update_cursor
+
+update_cursor:
+	mov eax, edi
+	sub eax, 0xB8000
+	shr eax, 1
+
+	; Save cursor position
+	mov cx, ax
+
+	; Send low byte
+	mov dx, 0x3D4
+	mov al, 0x0F
+	out dx, al
+	mov dx, 0x3D5
+	mov al, cl
+	out dx, al
+
+	; Send high byte
+	mov dx, 0x3D4
+	mov al, 0x0E
+	out dx, al
+	mov dx, 0x3D5
+	mov al, ch
+	out dx, al
+
+	ret
+
+print_os_title:
+    mov esi, ascii_line1
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line2
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line3
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line4
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line5
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line6
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line7
+    mov ah, 0x07
+    call print_string
+
+    mov esi, ascii_line8
+    mov ah, 0x07
+    call print_string
+
+    ret
+
+print_string:
 	lodsb
 	or al, al
-	jz hang
-	mov ah, 0x0E
-	mov bh, 0x00
-	int 0x10
-	jmp print_kernel_version
+	jz .done
+	mov [edi], ax
+	add edi, 2
+	jmp print_string
+.done:
+	ret
 
-hang:
+halt:
 	cli
 	hlt
-	jmp hang
+	jmp halt
 
 kernel_version_message:
-	db "DumbOS Kernel v0.1", 0
+    db "Kernel version: 0.1", 0
 
-os_title:
-    db " /$$$$$$$                          /$$        /$$$$$$   /$$$$$$ ", 0x0A
-    db "| $$__  $$                        | $$       /$$__  $$ /$$__  $$", 0x0A
-    db "| $$  \ $$ /$$   /$$ /$$$$$$/$$$$ | $$$$$$$ | $$  \ $$| $$  \__/", 0x0A
-    db "| $$  | $$| $$  | $$| $$_  $$_  $$| $$__  $$| $$  | $$|  $$$$$$ ", 0x0A
-    db "| $$  | $$| $$  | $$| $$ \ $$ \ $$| $$  \ $$| $$  | $$ \____  $$", 0x0A
-    db "| $$  | $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$  | $$ /$$  \ $$", 0x0A
-    db "| $$$$$$$/|  $$$$$$/| $$ | $$ | $$| $$$$$$$/|  $$$$$$/|  $$$$$$/", 0x0A
-    db "|_______/  \______/ |__/ |__/ |__/|_______/  \______/  \______/ ", 0x0A
-    db 0
+kernel_type_message:
+    db "Kernel type: 32bit", 0
+
+kernel_success_message:
+    db "Successfully loaded DumbOS!", 0
+
+ascii_line1:
+    db "   /$$$$$$$                          /$$        /$$$$$$   /$$$$$$               ", 0
+ascii_line2:
+    db "  | $$__  $$                        | $$       /$$__  $$ /$$__  $$              ", 0
+ascii_line3:
+    db "  | $$  \ $$ /$$   /$$ /$$$$$$/$$$$ | $$$$$$$ | $$  \ $$| $$  \__/              ", 0
+ascii_line4:
+    db "  | $$  | $$| $$  | $$| $$_  $$_  $$| $$__  $$| $$  | $$|  $$$$$$               ", 0
+ascii_line5:
+    db "  | $$  | $$| $$  | $$| $$ \ $$ \ $$| $$  \ $$| $$  | $$ \____  $$              ", 0
+ascii_line6:
+    db "  | $$  | $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$  | $$ /$$  \ $$              ", 0
+ascii_line7:
+    db "  | $$$$$$$/|  $$$$$$/| $$ | $$ | $$| $$$$$$$/|  $$$$$$/|  $$$$$$/              ", 0
+ascii_line8:
+    db "  |_______/  \______/ |__/ |__/ |__/|_______/  \______/  \______/               ", 0
 
 ; Pad to next 512 bytes
 times ((($-$$)+511)/512*512)-($-$$) db 0
