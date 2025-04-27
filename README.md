@@ -8,11 +8,18 @@ This OS is intended to be ran through Windows 10/11 with MSys2 and Qemu at the c
 
 ## How to install and set up Msys2 and Qemu for running DumbOS
 
+- [Download i686-elf-tools](https://github.com/lordmilko/i686-elf-tools)
+- Extract to 'C:\i686-elf-tools'
+- Add 'C:\i686-elf-tools\bin' to System Environment Path
+
 - [Download Msys2](https://www.msys2.org/)
 - Launch 'MSys2 MinGW64'
 - Set up MSys2       - 'pacman -Syu'
 - Install essentials - 'pacman -S --needed base-devel nasm cmake'
 - Install Qemu       - 'pacman -S mingw-w64-x86_64-qemu'
+
+- Run 'nano ~/.bashrc' in 'MSys2 MinGW64'
+- Add 'export PATH=$PATH:/c/i686-elf-tools/bin' at the end of the file, save and exit
 	
 ---
 

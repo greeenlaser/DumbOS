@@ -1,7 +1,13 @@
+;Copyright(C) 2025 Greenlaser
+;This program comes with ABSOLUTELY NO WARRANTY.
+;This is free software, and you are welcome to redistribute it under certain conditions.
+;Read LICENSE.md for more information.
+
 ; ===== DumbOS Kernel =====
 
 BITS 32
-ORG 0x1000           ; Kernel is loaded at 0x1000
+
+extern _start        ; Entry point into kernel_core.c
 
 start:
 	; Set up VGA text mode (direct memory access at 0x88000)
@@ -25,7 +31,7 @@ after_os_title:
 
 	; Move to next line
 	add edi, 160
-	sub edi, 38      ; 19 chars * 2 bytes
+	sub edi, 30      ; 15 chars * 2 bytes
 
 	; Print type
 	mov esi, kernel_type_message
@@ -34,14 +40,12 @@ after_os_title:
 
 	; Move down two more rows
     add edi, 320
-    sub edi, 36      ; 18 chars * 2 bytes
+    sub edi, 28      ; 14 chars * 2 bytes
 
 	; Print success
 	mov esi, kernel_success_message
 	mov ah, 0x0A
 	call print_string
-
-	call update_cursor
 
 update_cursor:
 	mov eax, edi
@@ -67,7 +71,7 @@ update_cursor:
 	mov al, ch
 	out dx, al
 
-	ret
+	jmp finish
 
 print_os_title:
     mov esi, ascii_line1
@@ -114,16 +118,11 @@ print_string:
 .done:
 	ret
 
-halt:
-	cli
-	hlt
-	jmp halt
-
 kernel_version_message:
-    db "Kernel version: 0.1", 0
+    db "OS version: 0.1", 0
 
 kernel_type_message:
-    db "Kernel type: 32bit", 0
+    db "OS type: 32bit", 0
 
 kernel_success_message:
     db "Successfully loaded DumbOS!", 0
@@ -144,6 +143,19 @@ ascii_line7:
     db "  | $$$$$$$/|  $$$$$$/| $$ | $$ | $$| $$$$$$$/|  $$$$$$/|  $$$$$$/              ", 0
 ascii_line8:
     db "  |_______/  \______/ |__/ |__/ |__/|_______/  \______/  \______/               ", 0
+
+halt:
+	cli
+	hlt
+	jmp halt
+
+finish:
+	call update_cursor
+
+	; Jump into C Kernel code
+	call _start
+
+	ret
 
 ; Pad to next 512 bytes
 times ((($-$$)+511)/512*512)-($-$$) db 0

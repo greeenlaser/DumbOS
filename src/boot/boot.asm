@@ -1,3 +1,8 @@
+;Copyright(C) 2025 Greenlaser
+;This program comes with ABSOLUTELY NO WARRANTY.
+;This is free software, and you are welcome to redistribute it under certain conditions.
+;Read LICENSE.md for more information.
+
 ; ===== DumbOS Bootloader =====
 
 ; Tell assembler this is a boot sector
@@ -25,12 +30,12 @@ start:
 	mov dx, 0x184F  ; Lower-right corner (row 24, column 79)
 	int 0x10
 
-load_kernel:
+load_boot2:
 	; Load the kernel from disk
 	mov ah, 0x02    ; BIOS read sectors
-	mov al, 2       ; Number of sectors to read (adjust based on kernel size)
+	mov al, 2       ; Number of sectors to read (boot2 will always be 512 bytes)
 	mov ch, 0       ; Cylinder 0
-	mov cl, 2       ; Sector 2 (start reading after bootloader)
+	mov cl, 2       ; Sector 2 (start reading after first boot)
 	mov dh, 0       ; Head 0
 	mov dl, [boot_drive] ; Restore correct boot drive
 	mov bx, 0x1000  ; Load address (0x1000 = 4096 bytes into RAM)
