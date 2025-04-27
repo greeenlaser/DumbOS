@@ -27,7 +27,7 @@ echo "[Debug] Building project..."
 if cmake --build . --config Release; then
     echo "[Success] Build succeeded!"
 	echo "[Success] Booting DumbOS..."
-	qemu-system-x86_64.exe -drive format=raw,file=boot.bin
+	qemu-system-x86_64.exe -drive format=raw,file=boot.img -no-reboot -no-shutdown
 else
     echo "[Error] Build failed!"
     exit 1

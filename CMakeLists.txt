@@ -1,20 +1,12 @@
 cmake_minimum_required(VERSION 3.30)
 
-project("DumbOS" LANGUAGES ASM_MASM)
+project("DumbOS" LANGUAGES NONE)
 
-enable_language(ASM_MASM)
+set(BOOT_DIR "${CMAKE_SOURCE_DIR}/src/boot")
+# set(KERNEL_DIR "${CMAKE_SOURCE_DIR}/src/kernel")
 
-set(PROJ_SRC "${CMAKE_SOURCE_DIR}/src")
+# Include bootloader build system
+add_subdirectory("${BOOT_DIR}")
 
-file(GLOB_RECURSE ASM_SRC "${PROJ_SRC}/*.asm")
-
-# Assemble .asm into .bin
-add_custom_command(
-	OUTPUT ${CMAKE_BINARY_DIR}/boot.bin
-	COMMAND nasm -f bin ${CMAKE_SOURCE_DIR}/src/boot.asm -o ${CMAKE_BINARY_DIR}/boot.bin
-	DEPENDS ${CMAKE_SOURCE_DIR}/src/boot.asm
-	COMMENT "Building bootloader with NASM"
-)
-
-# Create a dummy target to make it part of the build system
-add_custom_target(DumbOS ALL DEPENDS ${CMAKE_BINARY_DIR}/boot.bin)
+# Include kernel build system
+# add_subdirectory("${KERNEL_DIR%}")
