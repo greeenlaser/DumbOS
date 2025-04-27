@@ -30,24 +30,24 @@ start:
 	int 0x10        ; Call BIOS video interrupt to set cursor
 
 	; Print bootloader startup message
-	mov si, message
+	mov si, startup_message
 
-print_loop:
+print_startup_message:
 	lodsb
 	or al, al
-	jz hang
+	jz load_kernel
 
 	mov ah, 0x0E
 	mov bh, 0x00
 	int 0x10
-	jmp print_loop
+	jmp print_startup_message
 
 load_kernel:
 	; Load the kernel from disk
 	mov ah, 0x02    ; BIOS read sectors
 	mov al, 4       ; Number of sectors to read
 	mov ch, 0       ; Cylinder 0
-	mov cl, 2       ; Sector 2 (start reading after bootloader)
+	mov cl, 1       ; Sector 1 (start reading after bootloader)
 	mov dh, 0       ; Head 0
 	mov dl, 0x00    ; Drive 0 (booted drive)
 	mov bx, 0x1000  ; Load address (0x1000 = 4096 bytes into RAM)
@@ -55,30 +55,46 @@ load_kernel:
 
 	jc disk_error   ; If Carry Flag set, jump to disk_error
 
+	mov si, kernel_message
+	call print_message
+
 	; Jump to the loaded kernel
 	jmp 0x0000:0x1000
 
 disk_error:
+	; Move cursor to next line
+	mov ah, 0x02
+	mov bh, 0x00
+	mov dh, 2        ; Row 2 (two lines below)
+	mov dl, 0x00     ; Column 0
+	int 0x10
+
 	; Print simple disk error message
 	mov si, error_message
+	call print_message
+	jmp hang
 
-print_error:
+print_message:
 	lodsb
 	or al, al
-	jz hang
+	jz .done
 
 	mov ah, 0x0E
-	mov bh, 0x00
 	int 0x10
-	jmp print_error
+	jmp print_message
+.done:
+	ret
 
 hang:
 	cli
 	hlt
-	jmp print_loop
+	jmp hang
 
-message:
+startup_message:
 	db "Loading DumbOS...", 0
+
+kernel_message:
+	db "Kernel loaded!", 0
 
 error_message:
 	db "Disk Read Error!", 0
