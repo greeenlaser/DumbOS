@@ -1,0 +1,4 @@
+# Paths and files ignored by DumbOS
+.vs/
+out/
+build/
