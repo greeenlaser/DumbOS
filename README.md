@@ -1,5 +1,3 @@
-# DumbOS
-
 ![DumbOS Logo](image.png)
 
 This is a dumb idea i had to try to make an OS, obviously never anywhere near like a proper Unix or Windows, but just something that displays a lightweight GUI, has a barebones file manager and very lightweight graphics.
