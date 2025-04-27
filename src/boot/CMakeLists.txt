@@ -10,14 +10,23 @@ add_custom_command(
 	COMMENT "Building bootloader with NASM"
 )
 
-# Create image from bootloader
+# Create kernel
 add_custom_command(
-	OUTPUT ${CMAKE_BINARY_DIR}/boot.img
-	COMMAND cat ${CMAKE_BINARY_DIR}/boot.bin > ${CMAKE_BINARY_DIR}/boot.img
-	DEPENDS 
-		${CMAKE_BINARY_DIR}/boot.bin
-	COMMENT "Building boot image"
+	OUTPUT ${CMAKE_BINARY_DIR}/kernel.bin
+	COMMAND nasm -f bin ${CMAKE_SOURCE_DIR}/src/boot/kernel.asm -o ${CMAKE_BINARY_DIR}/kernel.bin
+	DEPENDS ${CMAKE_SOURCE_DIR}/src/boot/kernel.asm
+	COMMENT "Building kernel with NASM"
 )
 
-# Combine bootloaders together
+# Create image from bootloader and kernel
+add_custom_command(
+	OUTPUT ${CMAKE_BINARY_DIR}/boot.img
+	COMMAND cat ${CMAKE_BINARY_DIR}/boot.bin ${CMAKE_BINARY_DIR}/kernel.bin > ${CMAKE_BINARY_DIR}/boot.img
+	DEPENDS 
+		${CMAKE_BINARY_DIR}/boot.bin
+		${CMAKE_BINARY_DIR}/kernel.bin
+	COMMENT "Building image from bootloader and kernel"
+)
+
+# Dummy for attaching boot image
 add_custom_target(DumbOS ALL DEPENDS ${CMAKE_BINARY_DIR}/boot.img)

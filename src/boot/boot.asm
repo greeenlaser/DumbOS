@@ -42,6 +42,36 @@ print_loop:
 	int 0x10
 	jmp print_loop
 
+load_kernel:
+	; Load the kernel from disk
+	mov ah, 0x02    ; BIOS read sectors
+	mov al, 4       ; Number of sectors to read
+	mov ch, 0       ; Cylinder 0
+	mov cl, 2       ; Sector 2 (start reading after bootloader)
+	mov dh, 0       ; Head 0
+	mov dl, 0x00    ; Drive 0 (booted drive)
+	mov bx, 0x1000  ; Load address (0x1000 = 4096 bytes into RAM)
+	int 0x13        ; Call BIOS disk interrupt
+
+	jc disk_error   ; If Carry Flag set, jump to disk_error
+
+	; Jump to the loaded kernel
+	jmp 0x0000:0x1000
+
+disk_error:
+	; Print simple disk error message
+	mov si, error_message
+
+print_error:
+	lodsb
+	or al, al
+	jz hang
+
+	mov ah, 0x0E
+	mov bh, 0x00
+	int 0x10
+	jmp print_error
+
 hang:
 	cli
 	hlt
@@ -49,6 +79,9 @@ hang:
 
 message:
 	db "Loading DumbOS...", 0
+
+error_message:
+	db "Disk Read Error!", 0
 
 ; Fill the rest of the boot sector with zeros
 times 510-($-$$) db 0
