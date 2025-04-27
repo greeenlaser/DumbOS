@@ -7,11 +7,19 @@ start:
 	; Set text color to light gray on black
 	mov bl, 0x07
 
-	; Move cursor to row 2, column 5
+	; Clear the screen before writing text
+	mov ah, 0x06    ; Scroll up window
+	mov al, 0       ; Number of lines to scroll (0 = clear entire screen)
+	mov bh, 0x07    ; Light gray text on black background
+	mov cx, 0x0000  ; Upper-left corner (row 0, column 0)
+	mov dx, 0x184F  ; Lower-right corner (row 24, column 79)
+	int 0x10        ; Call BIOS video interrupt to perform screen clear
+
+	; Move cursor to top left corner
 	mov ah, 0x02
 	mov bh, 0x00
-	mov dh, 2        ; Row 2
-	mov dl, 5        ; Column 5
+	mov dh, 1       ; Row 1
+	mov dl, 2       ; Column 2
 	int 0x10
 
 	; Print kernel version message
@@ -27,11 +35,11 @@ print_kernel_version:
 	jmp print_kernel_version
 
 print_kernel_ready:
-	; Move cursor to row 4, column 5
+	; Move cursor lower, slightly to the right
 	mov ah, 0x02
 	mov bh, 0x00
-	mov dh, 4           ; Row 4
-	mov dl, 5           ; Column 5
+	mov dh, 2           ; Row 2
+	mov dl, 2           ; Column 2
 	int 0x10
 
 	mov bl, 0x02        ; Green text on black background

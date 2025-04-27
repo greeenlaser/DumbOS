@@ -21,7 +21,9 @@ add_custom_command(
 # Create image from bootloader and kernel
 add_custom_command(
 	OUTPUT ${CMAKE_BINARY_DIR}/boot.img
-	COMMAND cat ${CMAKE_BINARY_DIR}/boot.bin ${CMAKE_BINARY_DIR}/kernel.bin > ${CMAKE_BINARY_DIR}/boot.img
+	COMMAND dd if=/dev/zero of=${CMAKE_BINARY_DIR}/boot.img bs=512 count=2880
+	COMMAND dd if=${CMAKE_BINARY_DIR}/boot.bin of=${CMAKE_BINARY_DIR}/boot.img conv=notrunc
+	COMMAND dd if=${CMAKE_BINARY_DIR}/kernel.bin of=${CMAKE_BINARY_DIR}/boot.img seek=1 conv=notrunc
 	DEPENDS 
 		${CMAKE_BINARY_DIR}/boot.bin
 		${CMAKE_BINARY_DIR}/kernel.bin
